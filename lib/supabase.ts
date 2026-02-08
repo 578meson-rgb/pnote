@@ -1,16 +1,26 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Fallback to the hardcoded keys if environment variables are missing
-const supabaseUrl = (typeof process !== 'undefined' && process.env.SUPABASE_URL) 
-  || 'https://ltpmujaqfqqcgxdhksoz.supabase.co';
-const supabaseAnonKey = (typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY) 
-  || 'sb_publishable_t9u_VxIeqzO1a4LYOhcMSQ_gj4Qr_l5';
+// Safe environment variable retrieval
+const getEnv = (key: string, fallback: string): string => {
+  try {
+    // Check for process.env (Node/Vite) or import.meta.env (Vite)
+    const val = (typeof process !== 'undefined' && process.env && process.env[key]) 
+             || (typeof (import.meta as any).env !== 'undefined' && (import.meta as any).env[key]);
+    return val || fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
 
-const isDemoMode = !supabaseUrl || !supabaseAnonKey;
+const supabaseUrl = getEnv('SUPABASE_URL', 'https://ltpmujaqfqqcgxdhksoz.supabase.co');
+const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY', 'sb_publishable_t9u_VxIeqzO1a4LYOhcMSQ_gj4Qr_l5');
 
-export const supabase = !isDemoMode 
+// Only initialize if we have valid-looking strings
+const isValid = supabaseUrl.startsWith('http') && supabaseAnonKey.length > 10;
+
+export const supabase = isValid 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-export const getIsDemoMode = () => isDemoMode;
+export const getIsDemoMode = () => !supabase;

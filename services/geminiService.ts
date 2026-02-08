@@ -1,24 +1,27 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialization with an error check
-const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.error("Gemini API Key is missing. Please set API_KEY in your environment variables.");
+const getApiKey = (): string | null => {
+  try {
+    return (typeof process !== 'undefined' && process.env && process.env.API_KEY) 
+        || (typeof (import.meta as any).env !== 'undefined' && (import.meta as any).env.API_KEY)
+        || null;
+  } catch (e) {
     return null;
   }
-  return new GoogleGenAI({ apiKey });
 };
 
 export const geminiService = {
   async refineText(text: string): Promise<string> {
     if (!text.trim()) return "";
 
-    const ai = getAI();
-    if (!ai) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      console.warn("Gemini API Key is missing. AI features will not work.");
       throw new Error("AI service is currently unavailable. Please check the API key configuration.");
     }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     try {
       const response = await ai.models.generateContent({

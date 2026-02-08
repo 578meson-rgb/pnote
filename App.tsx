@@ -26,9 +26,13 @@ import {
   Send,
   Save,
   Cloud,
-  CloudOff
+  CloudOff,
+  ChevronRight,
+  Shield,
+  Zap,
+  Globe
 } from 'lucide-react';
-import { Note, SortOption, User } from './types';
+import { Note, User } from './types';
 import { noteService } from './services/noteService';
 import { geminiService } from './services/geminiService';
 import { supabase, getIsDemoMode } from './lib/supabase';
@@ -50,8 +54,84 @@ const IconButton: React.FC<{
   </button>
 );
 
-const AuthForm: React.FC<{ onAuthSuccess: (user: User) => void }> = ({ onAuthSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const LandingPage: React.FC<{ onStart: () => void; onLogin: () => void }> = ({ onStart, onLogin }) => {
+  return (
+    <div className="min-h-screen bg-[#f8f9fa] dark:bg-[#121212] text-[#1a1a1b] dark:text-white flex flex-col overflow-x-hidden">
+      {/* Navbar */}
+      <nav className="flex items-center justify-between px-6 md:px-12 py-6 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-2xl font-black tracking-tighter">Ai notes</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <button onClick={onLogin} className="font-bold text-gray-500 dark:text-gray-400 hover:text-blue-600 transition-colors">Login</button>
+          <button onClick={onStart} className="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-2.5 rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+            Get Started
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-12 md:pt-20">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-black uppercase tracking-widest mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+          <Zap className="w-3 h-3 fill-current" /> Powered by Gemini AI
+        </div>
+        <h1 className="text-5xl md:text-8xl font-black mb-6 max-w-5xl tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-8 duration-700">
+          The smartest place for <span className="text-blue-600">your ideas.</span>
+        </h1>
+        <p className="text-lg md:text-2xl text-gray-500 dark:text-gray-400 max-w-2xl mb-12 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-700 delay-100">
+          A minimal, beautiful space to capture thoughts. Refine your writing instantly with AI and sync across all your devices.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 mb-20 animate-in fade-in slide-in-from-bottom-12 duration-700 delay-200">
+          <button onClick={onStart} className="px-10 py-5 bg-blue-600 text-white text-lg font-black rounded-[2rem] shadow-2xl shadow-blue-600/30 hover:bg-blue-700 transition-all flex items-center gap-3 active:scale-95 group">
+            Start Writing Free <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+          <button onClick={onLogin} className="px-10 py-5 bg-white dark:bg-[#1e1e1e] border-2 border-gray-100 dark:border-white/5 text-lg font-black rounded-[2rem] shadow-sm hover:shadow-xl transition-all active:scale-95">
+            Already a user?
+          </button>
+        </div>
+
+        {/* Features Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full py-20 border-t dark:border-white/5">
+          <FeatureCard 
+            icon={<Cloud className="w-8 h-8 text-blue-500" />} 
+            title="Cloud Sync" 
+            description="Access your notes from any browser. Your thoughts follow you everywhere."
+          />
+          <FeatureCard 
+            icon={<Sparkles className="w-8 h-8 text-purple-500" />} 
+            title="AI Refinement" 
+            description="One click to polish your grammar and style using Gemini AI."
+          />
+          <FeatureCard 
+            icon={<Shield className="w-8 h-8 text-green-500" />} 
+            title="Privacy First" 
+            description="Secure authentication ensures your personal notes stay strictly personal."
+          />
+        </div>
+      </main>
+
+      <footer className="py-10 text-center border-t dark:border-white/5 text-gray-400 font-medium text-sm">
+        © 2024 Ai notes. Built with precision.
+      </footer>
+    </div>
+  );
+};
+
+const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
+  <div className="p-8 bg-white dark:bg-[#1e1e1e] rounded-[2.5rem] text-left border dark:border-white/5 shadow-sm hover:shadow-xl transition-all group">
+    <div className="mb-6 p-4 bg-gray-50 dark:bg-[#2d2e30] rounded-3xl w-fit group-hover:scale-110 transition-transform">
+      {icon}
+    </div>
+    <h3 className="text-xl font-black mb-3">{title}</h3>
+    <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed">{description}</p>
+  </div>
+);
+
+const AuthForm: React.FC<{ initialMode: 'login' | 'signup', onAuthSuccess: (user: User) => void; onBack: () => void }> = ({ initialMode, onAuthSuccess, onBack }) => {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -88,14 +168,20 @@ const AuthForm: React.FC<{ onAuthSuccess: (user: User) => void }> = ({ onAuthSuc
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] dark:bg-[#121212] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] dark:bg-[#121212] p-4 relative">
+      <button onClick={onBack} className="absolute top-8 left-8 flex items-center gap-2 text-gray-500 font-bold hover:text-blue-600 transition-colors">
+        <ArrowLeft className="w-5 h-5" /> Back to home
+      </button>
+      
       <div className="bg-white dark:bg-[#1e1e1e] p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full border dark:border-white/10 animate-in fade-in slide-in-from-bottom-8 duration-500">
         <div className="text-center mb-10">
           <div className="bg-blue-600 dark:bg-blue-500 p-4 rounded-3xl w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/20">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl font-extrabold dark:text-white tracking-tight">Ai notes</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-3 font-medium">Synced across all your devices.</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-3 font-medium">
+            {isLogin ? 'Welcome back!' : 'Create your account'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -104,7 +190,7 @@ const AuthForm: React.FC<{ onAuthSuccess: (user: User) => void }> = ({ onAuthSuc
             <input 
               type="email" 
               placeholder="Email address"
-              className="w-full bg-gray-50 dark:bg-[#2d2e30] border dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white transition-all"
+              className="w-full bg-gray-50 dark:bg-[#2d2e30] border dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white transition-all font-bold"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -115,7 +201,7 @@ const AuthForm: React.FC<{ onAuthSuccess: (user: User) => void }> = ({ onAuthSuc
             <input 
               type="password" 
               placeholder="Password"
-              className="w-full bg-gray-50 dark:bg-[#2d2e30] border dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white transition-all"
+              className="w-full bg-gray-50 dark:bg-[#2d2e30] border dark:border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white transition-all font-bold"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -160,6 +246,7 @@ const AuthForm: React.FC<{ onAuthSuccess: (user: User) => void }> = ({ onAuthSuc
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'app'>('landing');
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -180,18 +267,27 @@ const App: React.FC = () => {
       return;
     }
     const checkUser = async () => {
-      const { data: { session } } = await supabase!.auth.getSession();
-      if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email! });
+      try {
+        const { data: { session } } = await supabase!.auth.getSession();
+        if (session?.user) {
+          setUser({ id: session.user.id, email: session.user.email! });
+          setView('app');
+        }
+      } catch (err) {
+        console.warn("Auth check error, probably missing credentials.", err);
+      } finally {
+        setIsAuthChecking(false);
       }
-      setIsAuthChecking(false);
     };
     checkUser();
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) setUser({ id: session.user.id, email: session.user.email! });
-      else {
+      if (session?.user) {
+        setUser({ id: session.user.id, email: session.user.email! });
+        setView('app');
+      } else {
         setUser(null);
         setNotes([]);
+        if (view === 'app') setView('landing');
       }
     });
     return () => subscription.unsubscribe();
@@ -335,11 +431,18 @@ const App: React.FC = () => {
   if (isAuthChecking) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-[#202124]">
       <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
-      <span className="font-bold text-gray-400">Fetching your Cloud Notes...</span>
+      <span className="font-bold text-gray-400">Loading your space...</span>
     </div>
   );
 
-  if (!user) return <AuthForm onAuthSuccess={setUser} />;
+  if (view === 'landing') return <LandingPage onStart={() => setView('signup')} onLogin={() => setView('login')} />;
+  if (view === 'login' || view === 'signup') return (
+    <AuthForm 
+      initialMode={view === 'login' ? 'login' : 'signup'} 
+      onAuthSuccess={(u) => { setUser(u); setView('app'); }} 
+      onBack={() => setView('landing')}
+    />
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8f9fa] dark:bg-[#202124]">
@@ -384,15 +487,15 @@ const App: React.FC = () => {
           </IconButton>
           <div className="relative group ml-2">
             <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black cursor-pointer shadow-lg active:scale-95 transition-transform border-2 border-white dark:border-[#202124]">
-              {user.email[0].toUpperCase()}
+              {user?.email[0].toUpperCase() || 'U'}
             </div>
             <div className="absolute right-0 top-full pt-3 hidden group-hover:block w-56">
               <div className="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl border dark:border-white/10 p-2 animate-in fade-in slide-in-from-top-2">
                 <div className="px-4 py-3 border-b dark:border-white/5 mb-1">
                   <p className="text-xs text-gray-400 uppercase font-black tracking-widest mb-1">Logged In As</p>
-                  <p className="text-sm font-bold truncate dark:text-white">{user.email}</p>
+                  <p className="text-sm font-bold truncate dark:text-white">{user?.email}</p>
                 </div>
-                <button onClick={() => { if(!getIsDemoMode()) supabase!.auth.signOut(); setUser(null); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all">
+                <button onClick={() => { if(!getIsDemoMode()) supabase!.auth.signOut(); setUser(null); setView('landing'); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
               </div>
