@@ -1,11 +1,24 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialization with an error check
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("Gemini API Key is missing. Please set API_KEY in your environment variables.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const geminiService = {
   async refineText(text: string): Promise<string> {
     if (!text.trim()) return "";
+
+    const ai = getAI();
+    if (!ai) {
+      throw new Error("AI service is currently unavailable. Please check the API key configuration.");
+    }
 
     try {
       const response = await ai.models.generateContent({
@@ -20,7 +33,7 @@ export const geminiService = {
       return response.text || text;
     } catch (error) {
       console.error("Gemini refinement failed:", error);
-      throw new Error("Failed to refine text. Please check your connection.");
+      throw new Error("Failed to refine text. Please check your connection and API key.");
     }
   }
 };
